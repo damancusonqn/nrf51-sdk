@@ -546,13 +546,38 @@ simble_process_event_loop(void)
         for (;;) {
 
 
-		NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output | GPIO_PIN_CNF_INPUT_Disconnect;
+	NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output | GPIO_PIN_CNF_INPUT_Disconnect;
         
                 NRF_GPIO->OUTSET = (1 << 2);
 
                 
 		sd_app_evt_wait();
 		NRF_GPIO->OUTCLR = (1 << 2);
-               
+               /* uint32_t r;
+                uint32_t evt;
+
+                sd_app_evt_wait();
+                r = sd_evt_get(&evt);
+
+                struct {
+                        ble_evt_t evt;
+                        uint8_t buf[GATT_MTU_SIZE_DEFAULT];
+                } evt_buf;
+                uint16_t len = sizeof(evt_buf);
+
+                sd_app_evt_wait();
+                r = sd_ble_evt_get((uint8_t *)&evt_buf, &len);
+                if (r == NRF_SUCCESS) {
+                        srv_handle_ble_event(&evt_buf.evt);
+
+                        switch (evt_buf.evt.header.evt_id) {
+                        case BLE_GAP_EVT_CONNECTED:
+                                onboard_led(ONBOARD_LED_OFF);
+                                break;
+                        case BLE_GAP_EVT_DISCONNECTED:
+                                simble_app_disconnected();
+                                break;
+                        }
+                }*/
         }
 }
