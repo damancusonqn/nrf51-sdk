@@ -7,6 +7,7 @@
 enum vendor_uuid {
         VENDOR_UUID_SENSOR_SERVICE = 0x1801,
         VENDOR_UUID_IND_SERVICE = 0x1802,
+        VENDOR_UUID_SENSOR_TEMP_SERVICE = 0x1803,
         VENDOR_UUID_TEMP_CHAR = 0x2301,
         VENDOR_UUID_HUMID_CHAR = 0x2302,
         VENDOR_UUID_MOTION_CHAR = 0x2303,
@@ -28,6 +29,7 @@ enum org_bluetooth_unit {
 struct char_desc;
 struct service_desc;
 
+typedef void (char_indicate_cb_t)(struct service_desc *s, struct char_desc *c);
 typedef void (char_write_cb_t)(struct service_desc *s, struct char_desc *c, const void *val, const uint16_t len);
 typedef void (char_read_cb_t)(struct service_desc *s, struct char_desc *c, void **val, uint16_t *len);
 typedef void (connect_cb_t)(struct service_desc *s);
@@ -42,7 +44,13 @@ struct char_desc {
         ble_gatts_char_pf_t format;
         char_write_cb_t *write_cb;
         char_read_cb_t *read_cb;
+        char_indicate_cb_t *indicate_cb;
         void *data;
+        union {
+                uint8_t notify : 1;
+                uint8_t indicate : 1;
+                uint8_t _flags;
+        };
 };
 
 struct service_desc {
@@ -66,5 +74,6 @@ void simble_srv_init(struct service_desc *s, uint8_t type, uint16_t id);
 void simble_srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length);
 void simble_srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit);
 void simble_srv_char_update(struct char_desc *c, void *val);
+uint32_t simble_srv_char_notify(struct char_desc *c, bool indicate, uint16_t length, void *val);
 
 #endif
