@@ -1,7 +1,7 @@
 DEVICE_VARIANT?= xxaa
 
 DEFINES+= NRF51 NRF51822_QFAA_CA
-SDKINCDIRS+= toolchain toolchain/gcc drivers_nrf/hal
+SDKINCDIRS+= toolchain toolchain/gcc drivers_nrf/hal device
 
 SDKSRCS+= toolchain/gcc/gcc_startup_nrf51.s toolchain/system_nrf51.c
 USE_SOFTDEVICE?= s110
@@ -24,7 +24,9 @@ CFLAGS+= -I${SDKDIR}/nordic/external/rtx/include
 LDLIBS+= ${SDKDIR}/nordic/external/rtx/source/GCC/libRTX_CM0.a
 endif
 
+ifeq ($(filter FALSE false NO no 0,${USE_SIMBLE}),)
 include ${SDKDIR}/relayr/src/build.mk
+endif
 
 CPPFLAGS+= $(patsubst %,-D%,${DEFINES})
 
@@ -123,7 +125,19 @@ gdbserver: ${PROG}.elf
 	JLinkGDBServer -device nRF51822_xxAA -if SWD
 
 gdb: ${PROG}.elf
-	${GDB} ${PROG}.elf -ex 'target remote :2331'
+	${GDB} ${PROG}.elf -ex 'target extended-remote :2331'
+
+GITREV= $(shell git describe --always)
+MAILFILE= ${PROG}-${GITREV}.hex
+CLEANFILES+= ${PROG}-*.hex
+
+mailfile: ${MAILFILE}
+	-$(foreach f,$(filter-out $<,$(wildcard ${PROG}-*.hex)),rm $f;)
+	-@md5sum $<
+	-@sha256sum $<
+
+${PROG}-${GITREV}.hex: ${PROG}.hex
+	cp $< $@
 
 clean:
 	-rm -f ${CLEANFILES}
